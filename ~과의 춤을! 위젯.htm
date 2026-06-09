@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>（；´д｀）ゞ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Pretendard:wght@400;500;600&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --accent: #E8C86A;
+  --font: 'DM Mono', monospace;
+  
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f8f9fa;
+  --color-background-tertiary: #f1f3f5;
+  --color-border-tertiary: #dee2e6;
+  --color-text-primary: #212529;
+  --color-text-secondary: #495057;
+  --color-text-tertiary: #868e96;
+  --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-background-tertiary);
+  padding: 20px;
+  color: var(--color-text-primary);
+}
+
+.editor-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 720px;
+  max-width: 1240px;
+  margin: 0 auto;
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-background-primary);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+}
+
+/* 왼쪽 패널 */
+.left {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background-secondary);
+  border-right: 0.5px solid var(--color-border-tertiary);
+}
+.left-header {
+  padding: 18px 20px 14px;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+.left-header .logo {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.left-header .title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.left-body {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 컬러 픽커 박스 */
+.picker-box {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.picker-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-bottom: 12px;
+}
+.big-swatch {
+  width: 100%;
+  height: 72px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 12px;
+  background: var(--accent);
+  transition: background-color 0.2s;
+}
+.hex-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hex-row .hash {
+  font-size: 14px;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+}
+.hex-row input[type=text] {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  outline: none;
+  padding: 0;
+}
+.hex-row input[type=color] {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+/* 프리셋 */
+.section-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.preset-btn {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 6px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.preset-btn:hover { background: #f1f3f5; }
+.preset-btn.on { border-color: var(--color-text-primary); background: #f1f3f5; box-shadow: inset 0 0 0 1px var(--color-text-primary); }
+
+.preset-chip {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+.preset-name {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-align: center;
+  word-break: keep-all;
+}
+
+/* 생성된 팔레트 */
+.swatch-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.swatch-row2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.swatch-chip {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  border: 0.5px solid rgba(0,0,0,0.08);
+}
+.swatch-info { flex: 1; }
+.swatch-name { font-size: 11px; color: var(--color-text-secondary); }
+.swatch-hex { font-size: 11px; font-family: var(--font-mono); color: var(--color-text-primary); }
+
+/* 복사 버튼 */
+.copy-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--color-text-primary);
+  color: var(--color-background-primary);
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity .15s, background-color 0.15s;
+  letter-spacing: .5px;
+}
+.copy-btn:hover { opacity: .85; }
+.copy-btn.done { background: #2A8A2A; color: white; }
+
+/* 오른쪽 패널 */
+.right {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background-tertiary);
+}
+.right-header {
+  padding: 16px 20px;
+  background: var(--color-background-primary);
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.right-header .label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+.preview-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.preview-iframe-wrap {
+  width: 100%;
+  max-width: 660px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .editor-shell {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .left {
+    border-right: none;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="editor-shell">
+  <div class="left">
+    <div class="left-header">
+      <div class="logo">Color Editor</div>
+      <div class="title">다이어리 테마</div>
+    </div>
+    <div class="left-body">
+
+      <div class="picker-box">
+        <div class="picker-label">대표 컬러</div>
+        <div class="big-swatch" id="bigSwatch"></div>
+        <div class="hex-row">
+          <span class="hash">#</span>
+          <input type="text" id="hexTxt" value="E8C86A" maxlength="6">
+          <input type="color" id="colorPick" value="#E8C86A">
+        </div>
+      </div>
+
+      <div class="section-label">지역별 테마 프리셋</div>
+      <div class="presets" id="presets"></div>
+
+      <div class="section-label">
+        <span>생성된 팔레트</span>
+        <span id="activeThemeName" style="font-size:10px; color:var(--accent); font-weight:600;"></span>
+      </div>
+      <div class="swatch-stack" id="swatchStack"></div>
+
+      <button class="copy-btn" id="copyBtn" onclick="copyHTML()">코드 복사</button>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="right-header">
+      <span class="label">미리보기</span>
+      <span style="font-size:11px;color:var(--color-text-tertiary);" id="previewTag">#E8C86A</span>
+    </div>
+    <div class="preview-scroll">
+      <div class="preview-iframe-wrap" id="previewWrap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 테마 데이터 구성
+const THEMES = [
+  { hex: '#E8C86A', name: '아르켄' },
+  { hex: '#90C4DC', name: '스카르' },
+  { hex: '#70B4E0', name: '에이르' },
+  { hex: '#D4C060', name: '발트' },
+  { hex: '#7EC87E', name: '알벤' },
+  { hex: '#A898D8', name: '흐라임' }
+];
+
+function hexToHsl(hex){
+  let r=parseInt(hex.slice(1,3),16)/255,
+      g=parseInt(hex.slice(3,5),16)/255,
+      b=parseInt(hex.slice(5,7),16)/255;
+  let max=Math.max(r,g,b),min=Math.min(r,g,b),h,s,l=(max+min)/2;
+  if(max===min){h=s=0;}else{
+    let d=max-min;s=l>.5?d/(2-max-min):d/(max+min);
+    switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;}h/=6;
+  }
+  return[h*360,s*100,l*100];
+}
+
+function hslToHex(h,s,l){
+  s/=100;l/=100;h/=360;
+  let r,g,b;
+  if(s===0){r=g=b=l;}else{
+    const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q;
+    const f=(t)=>{if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<.5)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;};
+    r=f(h+1/3);g=f(h);b=f(h-1/3);
+  }
+  return'#'+[r,g,b].map(v=>Math.round(v*255).toString(16).padStart(2,'0')).join('');
+}
+
+function palette(hex){
+  const [h,s,l]=hexToHsl(hex);
+  return{
+    main:hex,
+    gradStart:hslToHex(h,Math.min(s+5,100),Math.max(l-10,10)),
+    gradEnd:hslToHex(h,Math.max(s-5,30),Math.min(l+10,65)),
+    light:hslToHex(h,Math.max(s-15,15),Math.min(l+38,93)),
+    veryLight:hslToHex(h,Math.max(s-25,8),Math.min(l+50,97)),
+    dark:hslToHex(h,Math.min(s+8,100),Math.max(l-22,8)),
+    border:hslToHex(h,Math.max(s-15,20),Math.min(l+18,80)),
+    textOnLight:hslToHex(h,Math.max(s-5,35),Math.max(l-45,10)),
+    textMuted:hslToHex(h,Math.max(s-20,18),Math.max(l-20,28)),
+  };
+}
+
+function buildDiaryHTML(p, preview=false){
+  const detailsAttr = preview ? 'open' : '';
+  return `<details ${detailsAttr} style="width:100%;max-width:660px;margin:0 auto;background:${p.veryLight};border:1px solid ${p.border};border-radius:4px;box-shadow:3px 4px 16px rgba(0,0,0,0.10);overflow:hidden;font-family:Georgia,serif;">
+
+  <summary style="list-style:none; outline:none; cursor:pointer;">
+    <div style="background:linear-gradient(135deg,${p.gradStart} 0%,${p.gradEnd} 50%,${p.gradStart} 100%);height:8px;"></div>
+
+    <div style="display:flex;justify-content:flex-end;padding:0 16px;">
+      <div style="background:${p.main};color:${p.veryLight};font-size:10px;letter-spacing:2px;padding:3px 14px;border-radius:0 0 6px 6px;font-family:Georgia,serif;">D I A R Y</div>
+    </div>
+
+    <div style="display:flex;border-bottom:1px dashed ${p.border};margin:8px 16px 0 16px;padding-bottom:12px;">
+      <div style="flex:1;padding-right:12px;border-right:1px dashed ${p.border};">
+        <div style="font-size:9px;color:${p.main};letter-spacing:2px;margin-bottom:6px;">◈ STATUS</div>
+        <div style="font-size:13px;font-weight:bold;color:#1A0000;line-height:1.5;margin-bottom:4px;">{{TT}}</div>
+        <div style="font-size:11px;color:${p.textMuted};margin-bottom:2px;">🗓 {{YMD}} {{T}}</div>
+        <div style="font-size:11px;color:${p.textMuted};margin-bottom:2px;">📍 {{위치}} {{날씨}}</div>
+        <div style="font-size:11px;color:${p.main};font-weight:bold;margin-top:4px;">{{DD}}</div>
+      </div>
+
+      <div style="flex:1;padding-left:12px;">
+        <div style="font-size:9px;color:${p.main};letter-spacing:2px;margin-bottom:6px;">◈ TODAY</div>
+        <div style="font-size:11px;color:${p.textMuted};font-style:italic;line-height:1.7;margin-bottom:6px;">♪ {{가사}}</div>
+        <div style="font-size:11px;color:${p.textMuted};line-height:1.6;border-left:2px solid ${p.border};padding-left:8px;">"{{속담}}"</div>
+      </div>
+    </div>
+  </summary>
+
+  <div style="margin:12px 16px 0 16px;border:1px solid ${p.light};border-radius:4px;overflow:hidden;">
+    <details>
+      <summary style="cursor:pointer;padding:10px 14px;background:${p.light};display:flex;align-items:center;gap:10px;list-style:none;outline:none;">
+        <span style="font-size:18px;color:#1A0000;">{{상태}}</span>
+        <span style="font-size:12px;color:#1A0000;font-style:italic;flex:1;">"{{대사}}"</span>
+        <span style="font-size:10px;color:${p.main};">▾ 펼치기</span>
+      </summary>
+
+      <div style="display:flex;border-top:1px dashed ${p.border};">
+        <div style="flex:1;padding:10px 12px;border-right:1px dashed ${p.border};">
+          <div style="font-size:9px;color:${p.main};letter-spacing:1.5px;margin-bottom:6px;">— {{N}} —</div>
+          <div style="font-size:12px;color:${p.textMuted};font-weight:bold;margin-bottom:3px;">{{N복}}</div>
+          <div style="opacity:0.55; font-style:italic; font-size:12px;color:${p.textMuted};font-weight:bold;margin-bottom:3px;">{{N소}}</div>
+        </div>
+        <div style="flex:1;padding:10px 12px;">
+          <div style="font-size:9px;color:${p.main};letter-spacing:1.5px;margin-bottom:6px;">— {{P}} —</div>
+          <div style="font-size:12px;color:${p.textMuted};font-weight:bold;margin-bottom:3px;">{{P복}}</div>
+          <div style="opacity:0.55; font-style:italic; font-size:12px;color:${p.textMuted};font-weight:bold;margin-bottom:3px;">{{P소}}</div>
+        </div>
+      </div>
+
+      <div style="padding:10px 14px;background:${p.veryLight};border-top:1px dashed ${p.border};">
+        <div style="font-size:9px;color:${p.main};letter-spacing:1.5px;margin-bottom:4px;">✦ FLOW: {{흐름}}</div>
+        <div style="font-size:9px;color:${p.main};letter-spacing:1.5px;margin-bottom:4px;">✦ 속마음</div>
+        <div style="font-size:11px;color:#1A0000;font-style:italic;line-height:1.7;margin-bottom:8px;">{{속마음}}</div>
+        <div style="display:flex;gap:16px;">
+          <div style="font-size:10px;color:${p.textMuted};">💞  {{관계}}회</div>
+          <div style="font-size:10px;color:${p.textMuted};">✨ {{진도}}</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div style="display:flex;gap:10px;margin:12px 16px 0 16px;">
+    <div style="flex:1;background:#FFF3CD;border:1px solid #E8D48A;border-radius:2px;padding:10px 12px;box-shadow:2px 3px 6px rgba(0,0,0,0.07);">
+      <div style="font-size:9px;color:#8A6A00;letter-spacing:1.5px;margin-bottom:6px;border-bottom:1px solid #E8D48A;padding-bottom:4px;">✦ PERSONAL</div>
+      <div style="font-size:11px;color:#3A2800;line-height:1.7;margin-bottom:6px;">{{응}}</div>
+      <div style="font-size:10px;color:#5A4000;font-style:italic;border-top:1px dashed #E8D48A;padding-top:5px;">✏ {{다짐}}</div>
+    </div>
+
+    <div style="flex:1;background:#E8F4E8;border:1px solid #A8D4A8;border-radius:2px;padding:10px 12px;box-shadow:2px 3px 6px rgba(0,0,0,0.07);">
+      <div style="font-size:9px;color:#2A6A2A;letter-spacing:1.5px;margin-bottom:6px;border-bottom:1px solid #A8D4A8;padding-bottom:4px;">✦ TDAILY LOG</div>
+      <div style="font-size:11px;color:#1A3A1A;line-height:1.7;margin-bottom:5px;">{{TMI}}</div>
+      <div style="font-size:13px;color:#2A4A2A;line-height:1.9;margin-bottom:5px;">{{낙서}}</div>
+      <div style="font-size:10px;color:#2A5A2A;font-style:italic;border-top:1px dashed #A8D4A8;padding-top:5px;">💌 {{한줄}}</div>
+    </div>
+  </div>
+
+  <div style="margin:10px 16px 0 16px;background:#E8F0FF;border:1px solid #A8BCE8;border-radius:2px;padding:10px 14px;box-shadow:2px 3px 6px rgba(0,0,0,0.06);">
+    <div style="font-size:9px;color:#2A3A7A;letter-spacing:1.5px;margin-bottom:6px;border-bottom:1px solid #A8BCE8;padding-bottom:4px;">📝 NOTE</div>
+    <div style="font-size:11px;color:#1A2A5A;line-height:1.9;white-space:pre-line;">{{노트}}</div>
+  </div>
+
+  <div style="margin:10px 16px 0 16px; background: ${p.veryLight}; border: 1px solid ${p.border}; padding: 12px 14px; font-size: 11px; line-height: 1.8; border-radius: 4px; border-top: 3px solid ${p.main}; box-shadow: 2px 3px 6px rgba(0,0,0,0.05);">
+    <div style="color: ${p.main}; font-size: 10px; font-weight: bold; margin-bottom: 6px; letter-spacing: 1px; display: flex; align-items: center; gap: 5px;">
+      <span>🤝</span> PROMISE
+    </div>
+    <div style="color: #1A0000; margin-bottom: 12px; white-space: pre-line;">{{약속}}</div>
+    
+    <div style="border-top: 1px dashed ${p.border}; margin-bottom: 10px;"></div>
+
+    <div style="color: ${p.main}; font-size: 10px; font-weight: bold; margin-bottom: 6px; letter-spacing: 1px; display: flex; align-items: center; gap: 5px;">
+      <span>📖</span> MEMORY
+    </div>
+    <div style="color: #1A0000; white-space: pre-line;">{{기억}}</div>
+  </div>
+
+  <div style="margin:10px 16px 0 16px;border:1px solid ${p.border};border-radius:4px;overflow:hidden;">
+    <div style="background:${p.light};padding:8px 14px;border-bottom:1px dashed ${p.border};">
+      <div style="font-size:9px;color:${p.main};letter-spacing:2px;">🍀 FORTUNE</div>
+    </div>
+    <div style="padding:10px 14px;background:${p.veryLight};">
+      <div style="font-size:11px;color:#1A0000;line-height:1.9;white-space:pre-line;">{{오늘의운세}}</div>
+    </div>
+  </div>
+
+  <div style="margin:10px 16px 16px 16px;border:1px solid ${p.border};border-radius:4px;overflow:hidden;">
+    <details>
+      <summary style="cursor:pointer;background:${p.light};padding:8px 14px;display:flex;justify-content:space-between;align-items:center;list-style:none;outline:none;">
+        <span style="font-size:9px;color:${p.main};letter-spacing:2px;">💡 TIP</span>
+        <span style="font-size:10px;color:${p.main};">▾ 펼치기</span>
+      </summary>
+      <div style="padding:10px 14px;border-top:1px dashed ${p.border};background:${p.veryLight};">
+        <div style="font-size:11px;color:#1A0000;line-height:1.9;white-space:pre-line;">{{팁}}</div>
+      </div>
+    </details>
+  </div>
+
+  <div style="background:linear-gradient(135deg,${p.gradStart} 0%,${p.gradEnd} 50%,${p.gradStart} 100%);height:5px;"></div>
+</details>`;
+}
+
+let currentHex='#E8C86A';
+
+function apply(hex){
+  currentHex=hex;
+  const p=palette(hex);
+  
+  document.getElementById('bigSwatch').style.background=hex;
+  document.getElementById('hexTxt').value=hex.slice(1);
+  document.getElementById('colorPick').value=hex;
+  document.getElementById('previewTag').textContent=hex.toUpperCase();
+  
+  document.querySelectorAll('.preset-btn').forEach(el => el.classList.toggle('on', el.dataset.c === hex.toUpperCase()));
+
+  const matchedTheme = THEMES.find(t => t.hex.toUpperCase() === hex.toUpperCase());
+  const themeNameEl = document.getElementById('activeThemeName');
+  if (matchedTheme) {
+    themeNameEl.textContent = matchedTheme.name + ' 테마';
+    document.documentElement.style.setProperty('--accent', hex);
+  } else {
+    themeNameEl.textContent = '커스텀 컬러';
+    document.documentElement.style.setProperty('--accent', hex);
+  }
+
+  const names=[['main','대표 컬러'],['light','밝은 포인트'],['veryLight','배경'],['border','테두리'],['textMuted','본문 텍스트']];
+  document.getElementById('swatchStack').innerHTML=names.map(([k,n])=>`
+    <div class="swatch-row2">
+      <div class="swatch-chip" style="background:${p[k]};"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">${n}</div>
+        <div class="swatch-hex">${p[k].toUpperCase()}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('previewWrap').innerHTML=buildDiaryHTML(p,true);
+}
+
+function copyHTML(){
+  const p=palette(currentHex);
+  navigator.clipboard.writeText(buildDiaryHTML(p,false)).then(()=>{
+    const btn=document.getElementById('copyBtn');
+    btn.textContent='복사됨 ✓';btn.classList.add('done');
+    setTimeout(()=>{btn.textContent='코드 복사';btn.classList.remove('done');},2200);
+  });
+}
+
+const pc=document.getElementById('presets');
+THEMES.forEach(theme=>{
+  const btn = document.createElement('div');
+  btn.className = 'preset-btn';
+  btn.dataset.c = theme.hex.toUpperCase();
+  btn.innerHTML = `
+    <div class="preset-chip" style="background:${theme.hex};"></div>
+    <div class="preset-name">${theme.name}</div>
+  `;
+  btn.onclick = () => apply(theme.hex);
+  pc.appendChild(btn);
+});
+
+document.getElementById('hexTxt').addEventListener('input',e=>{
+  const v='#'+e.target.value.replace(/[^0-9a-fA-F]/g,'');
+  if(v.length===7)apply(v);
+});
+document.getElementById('colorPick').addEventListener('input',e=>apply(e.target.value));
+
+apply('#E8C86A');
+</script>
+</body>
+</html>
